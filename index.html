@@ -1,0 +1,459 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script>
+(function(){
+  var __k="b807d549-3fa2-46f2-9dfd-d2cc7bd05c80";
+  var __a=null;
+  var __preload=null;
+  if(!__k)return;
+  var _f=window.fetch;
+  // S3 URL → file_key 추출 후 __a 매핑 lookup → assets/ 로컬 경로 치환
+  // 응답에 새 signed URL이 와도 같은 file_key면 같은 assets/ → 영구 작동
+  function patchUrls(data){
+    if(!__a)return data;
+    try{
+      var s=JSON.stringify(data);
+      // 응답 안의 모든 S3 URL을 정규식으로 찾고, file_key 추출 → 매핑 lookup
+      s=s.replace(/https:\/\/prod-files-secure\.s3\.amazonaws\.com\/[^"\s<>]+/g,function(url){
+        var m=url.match(/\.amazonaws\.com\/([^?\\]+)/);
+        if(!m)return url;
+        var key=m[1].replace(/\\u002F/g,"/");
+        return __a[key]||url;
+      });
+      return JSON.parse(s);
+    }catch(e){return data;}
+  }
+  function callMisiso(method,path,body){
+    return _f("https://misiso.com/api/notion/deploy-proxy",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({deployKey:__k,path:path,method:method,body:body})
+    }).then(function(r){
+      var status=r.status;
+      return r.json().then(function(data){return {status:status,data:patchUrls(data)};});
+    });
+  }
+  // preload pattern — 페이지 로드와 병렬로 정적 fetch 호출 미리 시작
+  var __preloadCache={};
+  if(__preload){
+    for(var i=0;i<__preload.length;i++){
+      (function(c){
+        var key=c.method+":"+c.path+":"+(c.body?JSON.stringify(c.body):"");
+        __preloadCache[key]=callMisiso(c.method,c.path,c.body);
+      })(__preload[i]);
+    }
+  }
+  window.fetch=function(url,opts){
+    var u=typeof url==="string"?url:String(url);
+    if(!u.startsWith("/api/notion/"))return _f.apply(this,arguments);
+    var path=u.slice("/api/notion".length);
+    var method=(opts&&opts.method)||"GET";
+    var body;
+    try{body=opts&&opts.body?JSON.parse(opts.body):undefined;}catch(e){body=opts&&opts.body;}
+    var ck=method+":"+path+":"+(body?JSON.stringify(body):"");
+    var promise=__preloadCache[ck];
+    if(promise){delete __preloadCache[ck];}
+    else{promise=callMisiso(method,path,body);}
+    return promise.then(function(res){
+      return new Response(JSON.stringify(res.data),{
+        status:res.status,
+        headers:{"Content-Type":"application/json"}
+      });
+    });
+  };
+})();
+</script>
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://misiso.com" crossorigin/>
+<meta property="og:title" content="통증 교육"/>
+<meta property="og:description" content="통증 교육"/>
+<title>통증 교육</title>
+<meta name="description" content="통증 교육"/>
+<meta property="og:image" content="https://hyunghani1-dot.github.io/notion-preview-fb1ef447/og-image-00yg0m3z.png"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://hyunghani1-dot.github.io/notion-preview-fb1ef447/og-image-00yg0m3z.png"/>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2032%2032'%3E%3Crect%20width%3D'32'%20height%3D'32'%20rx%3D'6'%20fill%3D'%236366f1'%2F%3E%3Ctext%20x%3D'16'%20y%3D'22'%20text-anchor%3D'middle'%20font-size%3D'18'%20fill%3D'white'%20font-family%3D'sans-serif'%3EP%3C%2Ftext%3E%3C%2Fsvg%3E"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(255, 224, 130, 0.65), transparent 28%),
+    radial-gradient(circle at 90% 8%, rgba(125, 211, 252, 0.65), transparent 30%),
+    radial-gradient(circle at 78% 88%, rgba(187, 247, 208, 0.7), transparent 32%),
+    linear-gradient(135deg, #fffdf4 0%, #eefaff 45%, #f6fff2 100%);
+  color: #123047;
+  min-height: 100vh;
+}
+
+button {
+  font-family: inherit;
+}
+
+.app {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 56px;
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  border-radius: 34px;
+  padding: 34px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 24px 80px rgba(14, 116, 144, 0.16);
+}
+
+.hero::after {
+  content: "✨";
+  position: absolute;
+  right: 28px;
+  top: 24px;
+  font-size: 64px;
+  opacity: 0.75;
+  animation: float 2.8s ease-in-out infinite;
+}
+
+.badge {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-weight: 900;
+  font-size: 14px;
+  border: 1px solid #bae6fd;
+}
+
+h1 {
+  margin: 18px 0 12px;
+  font-size: clamp(34px, 6vw, 68px);
+  line-height: 1.05;
+  letter-spacing: -0.05em;
+}
+
+.highlight {
+  color: #0891b2;
+  text-shadow: 0 6px 0 rgba(125, 211, 252, 0.28);
+}
+
+.hero-text {
+  width: min(760px, 100%);
+  font-size: clamp(17px, 2.3vw, 23px);
+  line-height: 1.65;
+  color: #315166;
+  font-weight: 700;
+}
+
+.quick-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.quick-nav button {
+  border: 0;
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-weight: 900;
+  color: #0f3a4d;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(8, 145, 178, 0.14);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.quick-nav button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 32px rgba(8, 145, 178, 0.2);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.card {
+  grid-column: span 6;
+  border-radius: 26px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 52px rgba(15, 76, 92, 0.1);
+}
+
+.card.wide {
+  grid-column: 1 / -1;
+}
+
+.card h2 {
+  margin: 0 0 14px;
+  font-size: 26px;
+  letter-spacing: -0.04em;
+}
+
+.card p,
+.card li {
+  font-size: 17px;
+  line-height: 1.7;
+  font-weight: 650;
+  color: #334e5f;
+}
+
+.icon-title {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.big-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  font-size: 30px;
+  background: linear-gradient(135deg, #fef3c7, #cffafe);
+}
+
+.pill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.pill-list li {
+  padding: 10px 13px;
+  border-radius: 999px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  color: #075985;
+}
+
+.pathway {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.step {
+  min-height: 132px;
+  padding: 16px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #ffffff, #f0fdfa);
+  border: 2px dashed #67e8f9;
+}
+
+.step strong {
+  display: block;
+  font-size: 18px;
+  margin-bottom: 8px;
+  color: #0e7490;
+}
+
+.script-box {
+  display: grid;
+  gap: 12px;
+}
+
+.script {
+  padding: 16px;
+  border-radius: 20px;
+  background: #fff7ed;
+  border-left: 8px solid #fb923c;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.65;
+}
+
+.do-dont {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.do,
+.dont {
+  padding: 18px;
+  border-radius: 22px;
+}
+
+.do {
+  background: #ecfdf5;
+  border: 2px solid #86efac;
+}
+
+.dont {
+  background: #fff1f2;
+  border: 2px solid #fda4af;
+}
+
+.quiz-card {
+  margin-top: 22px;
+  border-radius: 30px;
+  padding: 26px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 3px solid #fde68a;
+  box-shadow: 0 24px 70px rgba(245, 158, 11, 0.16);
+}
+
+.progress {
+  height: 14px;
+  border-radius: 999px;
+  background: #fef3c7;
+  overflow: hidden;
+  margin: 14px 0 22px;
+}
+
+.progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22c55e, #06b6d4, #facc15);
+  transition: width 0.3s ease;
+}
+
+.question {
+  font-size: clamp(22px, 3.4vw, 34px);
+  line-height: 1.35;
+  letter-spacing: -0.04em;
+  font-weight: 950;
+}
+
+.quiz-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.quiz-buttons button,
+.next-btn,
+.restart-btn {
+  border: 0;
+  border-radius: 22px;
+  padding: 18px 20px;
+  font-size: 22px;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 12px 26px rgba(15, 76, 92, 0.15);
+  transition: transform 0.15s ease;
+}
+
+.quiz-buttons button:hover,
+.next-btn:hover,
+.restart-btn:hover {
+  transform: translateY(-3px);
+}
+
+.o-btn {
+  background: linear-gradient(135deg, #dcfce7, #86efac);
+  color: #14532d;
+}
+
+.x-btn {
+  background: linear-gradient(135deg, #fee2e2, #fda4af);
+  color: #7f1d1d;
+}
+
+.feedback {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 22px;
+  font-size: 18px;
+  line-height: 1.65;
+  font-weight: 850;
+}
+
+.feedback.correct {
+  background: #ecfdf5;
+  color: #14532d;
+  border: 2px solid #86efac;
+}
+
+.feedback.wrong {
+  background: #fff1f2;
+  color: #7f1d1d;
+  border: 2px solid #fda4af;
+}
+
+.next-btn,
+.restart-btn {
+  margin-top: 16px;
+  width: 100%;
+  background: linear-gradient(135deg, #bae6fd, #a7f3d0);
+  color: #0f3a4d;
+}
+
+.result {
+  text-align: center;
+  padding: 18px;
+}
+
+.score {
+  font-size: 72px;
+  font-weight: 1000;
+  color: #0891b2;
+  letter-spacing: -0.08em;
+}
+
+.small-note {
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(10px) rotate(8deg); }
+}
+
+@media (max-width: 860px) {
+  .card {
+    grid-column: 1 / -1;
+  }
+
+  .pathway {
+    grid-template-columns: 1fr;
+  }
+
+  .do-dont {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    padding: 24px;
+  }
+
+  .hero::after {
+    display: none;
+  }
+}
+</style>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script>if(window.Babel)Babel.disableScriptTags=true;</script>
+</head><body><div id="root"></div>
+<rect width='32' height='32' rx='8' fill='%2306b6d4'/><text x='16' y='22' text-anchor='middle' font-size='18' fill='white' font-family='sans-serif'>통</text></svg>"><script type="module">
+var __np_strip_imports=function(){return{visitor:{ImportDeclaration:function(path){var src=path.node.source.value;if(src.indexOf("./")===0||src.indexOf("../")===0)path.remove();},ExportDefaultDeclaration:function(path){var decl=path.node.declaration;if(decl.type==="FunctionDeclaration"||decl.type==="ClassDeclaration"){path.replaceWith(decl);}else{path.replaceWith({type:"VariableDeclaration",kind:"var",declarations:[{type:"VariableDeclarator",id:{type:"Identifier",name:"_default"},init:decl}]});}},ExportNamedDeclaration:function(path){if(path.node.declaration){path.replaceWith(path.node.declaration);}else{path.remove();}},ExportAllDeclaration:function(path){path.remove();}}};};
+var __np_dedupe_top_consts=function(){var _s={};return{visitor:{VariableDeclaration:function(p){if(p.parent.type!=="Program")return;if(p.node.kind!=="const"&&p.node.kind!=="let")return;var kept=[];for(var i=0;i<p.node.declarations.length;i++){var d=p.node.declarations[i];var n=d.id&&d.id.type==="Identifier"?d.id.name:null;if(n&&_s[n]){}else{if(n)_s[n]=true;kept.push(d);}}if(kept.length===0){p.remove();}else{p.node.declarations=kept;}}}}};
+var __np_jsx_decode=function(){function _d(v){v=v.replace(/\\u\{([0-9a-fA-F]+)\}/g,function(_,h){return String.fromCodePoint(parseInt(h,16));});v=v.replace(/\\u([0-9a-fA-F]{4})/g,function(_,h){return String.fromCharCode(parseInt(h,16));});return v;}return{visitor:{JSXText:function(p){p.node.value=_d(p.node.value);},StringLiteral:function(p){if(!p.parent||p.parent.type!=="JSXAttribute")return;p.node.value=_d(p.node.value);}}}};
+var __code="import React from 'https://esm.sh/react';\nimport ReactDOM from 'https://esm.sh/react-dom/client';\nimport { useState } from 'https://esm.sh/react';\nimport confetti from 'https://esm.sh/canvas-confetti';\n\nconst lessons = [\n  {\n    icon: '🧩',\n    title: '통증은 몸이 보내는 신호예요',\n    text: '환자가 “아파요”라고 말하면, 데스크는 먼저 공감해요. 통증은 단순히 아픈 부위 하나만의 문제가 아니라 근육, 관절, 신경, 자세, 생활습관이 함께 만든 신호일 수 있어요.',\n    bullets: ['목·어깨·허리·골반·무릎·발목 통증', '교통사고 후유증', '디스크·협착증·염좌·근육 긴장', '움직임 제한과 재활 필요']\n  },\n  {\n    icon: '🌱',\n    title: '재활은 “다시 잘 움직이게 하는 과정”이에요',\n    text: '초등학생에게 설명하듯 말하면, 재활은 고장 난 장난감을 다시 부드럽게 움직이게 고치는 것과 비슷해요. 아픈 곳만 누르는 게 아니라, 몸이 다시 잘 움직이는 길을 찾아주는 과정이에요.',\n    bullets: ['통증 줄이기', '움직임 회복하기', '근육 긴장 풀기', '일상생활로 돌아가기']\n  },\n  {\n    icon: '👐',\n    title: '추나는 몸의 균형을 도와주는 치료예요',\n    text: '추나는 손으로 관절과 근육의 움직임을 살펴보고, 뻣뻣하거나 틀어진 부분이 편하게 움직이도록 도와주는 치료입니다. 데스크는 “뼈를 억지로 맞춘다”보다 “움직임과 균형을 도와준다”라고 안내해요.',\n    bullets: ['목·허리·골반 불균형', '자세 문제', '교통사고 후 뻣뻣함', '움직일 때 불편감']\n  },\n  {\n    icon: '🚗',\n    title: '교통사고 후유증은 늦게 나타날 수 있어요',\n    text: '사고 직후에는 괜찮다가 며칠 뒤 목, 어깨, 허리 통증이나 두통, 어지럼, 피로감이 나타날 수 있어요. 데스크는 “괜찮겠죠”라고 단정하지 말고 진료로 확인하도록 안내해요.',\n    bullets: ['목·허리 통증', '두통·어지럼', '잠이 불편함', '몸이 무겁고 피곤함']\n  }\n];\n\nconst guideCards = [\n  {\n    title: '환자가 “목이 아파요”라고 하면',\n    script: '“목 통증은 목 근육뿐 아니라 어깨, 자세, 신경 문제와도 연결될 수 있어요. 원장님 진료에서 움직임과 통증 부위를 확인해드릴게요.”'\n  },\n  {\n    title: '환자가 “허리디스크인가요?”라고 하면',\n    script: '“증상만으로 단정하긴 어려워요. 허리 통증은 근육, 관절, 디스크, 신경 등 원인이 다양해서 진료로 확인하는 게 좋아요.”'\n  },\n  {\n    title: '환자가 “추나는 아픈가요?”라고 하면',\n    script: '“환자분 상태에 맞춰 무리하지 않게 진행해요. 불편한 정도를 확인하면서 몸의 움직임을 도와드리는 치료예요.”'\n  },\n  {\n    title: '환자가 “교통사고 후 며칠 뒤 아파요”라고 하면',\n    script: '“교통사고 후유증은 시간이 지나면서 나타나는 경우도 있어요. 목·허리·두통·어지럼 같은 증상을 진료 때 자세히 확인해드릴게요.”'\n  }\n];\n\nconst quiz = [\n  {\n    q: '통증재활클리닉은 “아픈 곳만 잠깐 덜 아프게 하는 곳”이다.',\n    answer: false,\n    why: '통증 완화도 중요하지만, 원인을 살피고 움직임을 회복해 일상으로 돌아가도록 돕는 곳이에요.'\n  },\n  {\n    q: '데스크는 환자의 병명을 전화에서 확정해서 말해도 된다.',\n    answer: false,\n    why: '병명은 진료 후 판단해요. 데스크는 “진료로 확인해드리겠습니다”라고 연결해야 해요.'\n  },\n  {\n    q: '재활은 다시 잘 움직이도록 돕는 과정이라고 쉽게 설명할 수 있다.',\n    answer: true,\n    why: '맞아요. 초등학생에게 설명하듯 “몸이 다시 잘 움직이게 도와주는 과정”이라고 말하면 좋아요.'\n  },\n  {\n    q: '교통사고 후유증은 사고 당일에만 나타나고 며칠 뒤에는 나타나지 않는다.',\n    answer: false,\n    why: '며칠 뒤 목·허리 통증, 두통, 어지럼, 피로감이 나타날 수 있어요.'\n  },\n  {\n    q: '추나는 억지로 뼈를 맞추는 치료라고 설명하는 것이 가장 좋다.',\n    answer: false,\n    why: '무섭게 들릴 수 있어요. “몸의 움직임과 균형을 도와주는 치료”라고 안내해요.'\n  },\n  {\n    q: '목 통증은 어깨, 자세, 신경 문제와도 연결될 수 있다.',\n    answer: true,\n    why: '맞아요. 통증은 여러 구조가 함께 관련될 수 있어요.'\n  },\n  {\n    q: '환자가 불안해하면 어려운 의학용어를 많이 써서 전문적으로 보여주는 게 좋다.',\n    answer: false,\n    why: '환자 안내는 쉽고 안심되게 해야 해요. 어려운 말보다 이해되는 말이 중요해요.'\n  },\n  {\n    q: '데스크 안내의 첫 단계는 공감이다.',\n    answer: true,\n    why: '맞아요. “많이 불편하셨겠어요”처럼 먼저 마음을 편하게 해주세요.'\n  },\n  {\n    q: '허리 통증은 무조건 디스크라고 안내해도 된다.',\n    answer: false,\n    why: '허리 통증은 근육, 관절, 디스크, 신경 등 원인이 다양해요. 단정하지 않아요.'\n  },\n  {\n    q: '좋은 안내는 공감 → 쉬운 설명 → 진료 연결 순서로 하면 좋다.',\n    answer: true,\n    why: '맞아요. 이 순서를 지키면 환자가 안심하고 진료를 받을 수 있어요.'\n  }\n];\n\nfunction celebrate() {\n  confetti({\n    particleCount: 120,\n    spread: 75,\n    origin: { y: 0.65 },\n    colors: ['#22c55e', '#06b6d4', '#facc15', '#fb7185']\n  });\n}\n\nfunction sadEffect() {\n  const el = document.querySelector('.quiz-card');\n  if (!el) return;\n  el.animate(\n    [\n      { transform: 'translateX(0)' },\n      { transform: 'translateX(-8px)' },\n      { transform: 'translateX(8px)' },\n      { transform: 'translateX(0)' }\n    ],\n    { duration: 260, easing: 'ease-in-out' }\n  );\n}\n\nfunction App() {\n  const [idx, setIdx] = useState(0);\n  const [selected, setSelected] = useState(null);\n  const [score, setScore] = useState(0);\n  const [done, setDone] = useState(false);\n\n  const current = quiz[idx];\n  const isCorrect = selected === current?.answer;\n\n  function jumpTo(id) {\n    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });\n  }\n\n  function choose(value) {\n    if (selected !== null) return;\n    setSelected(value);\n\n    if (value === current.answer) {\n      setScore(prev => prev + 1);\n      celebrate();\n    } else {\n      sadEffect();\n    }\n  }\n\n  function next() {\n    if (idx + 1 >= quiz.length) {\n      setDone(true);\n      if (score + (isCorrect ? 0 : 0) >= 8) celebrate();\n      return;\n    }\n    setIdx(prev => prev + 1);\n    setSelected(null);\n  }\n\n  function restart() {\n    setIdx(0);\n    setSelected(null);\n    setScore(0);\n    setDone(false);\n  }\n\n  return (\n    <main className=\"app\">\n      <section className=\"hero\">\n        <div className=\"badge\">🌞 밝은 배경 · 데스크팀 교육 · 초등학생도 이해하는 설명</div>\n        <h1>\n          통증재활클리닉을<br />\n          <span className=\"highlight\">쉽고 따뜻하게 안내하기</span>\n        </h1>\n        <p className=\"hero-text\">\n          환자가 “아파요”라고 말할 때, 데스크의 첫마디는 치료의 시작입니다.\n          어렵게 설명하지 말고, 환자가 안심할 수 있게 쉽고 짧게 안내해요.\n        </p>\n        <div className=\"quick-nav\">\n          <button onClick={() => jumpTo('concept')}>1. 핵심 이해</button>\n          <button onClick={() => jumpTo('flow')}>2. 진료 흐름</button>\n          <button onClick={() => jumpTo('script')}>3. 안내 멘트</button>\n          <button onClick={() => jumpTo('quiz')}>4. O/X 퀴즈</button>\n        </div>\n      </section>\n\n      <section className=\"grid\" id=\"concept\">\n        {lessons.map(item => (\n          <article className=\"card\" key={item.title}>\n            <div className=\"icon-title\">\n              <div className=\"big-icon\">{item.icon}</div>\n              <h2>{item.title}</h2>\n            </div>\n            <p>{item.text}</p>\n            <ul className=\"pill-list\">\n              {item.bullets.map(bullet => <li key={bullet}>{bullet}</li>)}\n            </ul>\n          </article>\n        ))}\n      </section>\n\n      <section className=\"card wide\" id=\"flow\">\n        <div className=\"icon-title\">\n          <div className=\"big-icon\">🗺️</div>\n          <h2>환자에게 설명하는 진료 흐름</h2>\n        </div>\n        <div className=\"pathway\">\n          <div className=\"step\">\n            <strong>1. 접수</strong>\n            어디가, 언제부터, 어떻게 아픈지 편하게 듣습니다.\n          </div>\n          <div className=\"step\">\n            <strong>2. 진료</strong>\n            원장님이 통증 부위와 움직임을 확인합니다.\n          </div>\n          <div className=\"step\">\n            <strong>3. 치료</strong>\n            침, 약침, 추나, 물리치료 등 상태에 맞게 진행합니다.\n          </div>\n          <div className=\"step\">\n            <strong>4. 재활</strong>\n            다시 잘 움직이도록 생활습관과 운동 방향을 잡습니다.\n          </div>\n          <div className=\"step\">\n            <strong>5. 관리</strong>\n            좋아지는 과정을 보며 치료 계획을 조절합니다.\n          </div>\n        </div>\n      </section>\n\n      <section className=\"grid\" id=\"script\">\n        <article className=\"card wide\">\n          <div className=\"icon-title\">\n            <div className=\"big-icon\">💬</div>\n            <h2>바로 쓰는 환자 안내 멘트</h2>\n          </div>\n          <div className=\"script-box\">\n            {guideCards.map(card => (\n              <div className=\"script\" key={card.title}>\n                <strong>{card.title}</strong><br />\n                {card.script}\n              </div>\n            ))}\n          </div>\n        </article>\n\n        <article className=\"card wide\">\n          <div className=\"icon-title\">\n            <div className=\"big-icon\">✅</div>\n            <h2>데스크 말하기 약속</h2>\n          </div>\n          <div className=\"do-dont\">\n            <div className=\"do\">\n              <h3>이렇게 말해요</h3>\n              <ul>\n                <li>“많이 불편하셨겠어요.”</li>\n                <li>“진료에서 원인을 확인해드릴게요.”</li>\n                <li>“상태에 맞춰 무리하지 않게 안내드릴게요.”</li>\n                <li>“통증과 움직임을 함께 살펴보는 치료입니다.”</li>\n              </ul>\n            </div>\n            <div className=\"dont\">\n              <h3>이 말은 피하기</h3>\n              <ul>\n                <li>“그건 무조건 디스크예요.”</li>\n                <li>“추나는 뼈를 맞추는 거예요.”</li>\n                <li>“그 정도는 괜찮아요.”</li>\n                <li>“한 번만 치료하면 다 나아요.”</li>\n              </ul>\n            </div>\n          </div>\n        </article>\n      </section>\n\n      <section className=\"quiz-card\" id=\"quiz\">\n        {!done ? (\n          <>\n            <div className=\"badge\">🧠 O/X 복습 퀴즈 · {idx + 1} / {quiz.length}</div>\n            <div className=\"progress\">\n              <span style={{ width: `${((idx + (selected !== null ? 1 : 0)) / quiz.length) * 100}%` }} />\n            </div>\n            <div className=\"question\">{current.q}</div>\n            <div className=\"quiz-buttons\">\n              <button className=\"o-btn\" onClick={() => choose(true)}>O 맞아요</button>\n              <button className=\"x-btn\" onClick={() => choose(false)}>X 아니에요</button>\n            </div>\n            {selected !== null && (\n              <>\n                <div className={`feedback ${isCorrect ? 'correct' : 'wrong'}`}>\n                  {isCorrect ? '🎉 정답이에요!' : '😢 아쉬워요!'}<br />\n                  {current.why}\n                </div>\n                <button className=\"next-btn\" onClick={next}>\n                  {idx + 1 >= quiz.length ? '결과 보기' : '다음 문제'}\n                </button>\n              </>\n            )}\n          </>\n        ) : (\n          <div className=\"result\">\n            <div className=\"badge\">🎓 교육 완료</div>\n            <h2>최종 점수</h2>\n            <div className=\"score\">{score} / {quiz.length}</div>\n            <p>\n              {score >= 9\n                ? '완벽해요! 이제 환자에게 쉽고 따뜻하게 안내할 수 있어요.'\n                : score >= 7\n                ? '좋아요! 틀린 문항의 멘트만 한 번 더 복습해요.'\n                : '다시 한 번 천천히 읽고 재도전해요. 쉬운 설명이 가장 중요해요.'}\n            </p>\n            <button className=\"restart-btn\" onClick={restart}>처음부터 다시 풀기</button>\n          </div>\n        )}\n      </section>\n\n      <p className=\"small-note\">\n        안내 주의: 데스크는 진단을 확정하지 않고, 환자가 안심하고 진료를 받을 수 있도록 연결합니다.\n      </p>\n    </main>\n  );\n}\n\nReactDOM.createRoot(document.getElementById('root')).render(<App />);";
+try{var __result=Babel.transform(__code,{filename:"app.tsx",presets:["react","typescript"],plugins:[__np_strip_imports,__np_dedupe_top_consts,__np_jsx_decode],generatorOpts:{jsescOption:{minimal:true}},sourceType:"module"});try{var __s=document.createElement("script");__s.type="module";__s.textContent=__result.code;document.head.appendChild(__s);}catch(runErr){console.error("[user code runtime] "+(runErr.message||runErr)+"\n"+(runErr.stack||""));}}catch(transErr){var lm=(transErr.message||"").match(/\((\d+):(\d+)\)/);var ln=lm?parseInt(lm[1],10):0;var cx="";if(ln>0){var ls=__code.split("\n");var s=Math.max(0,ln-3),e=Math.min(ls.length,ln+2);cx="\n--- 사용자 코드 주변 ---\n"+ls.slice(s,e).map(function(l,i){return (s+i+1)+": "+l;}).join("\n");}console.error("[Babel transform 실패] "+(transErr.message||transErr)+cx);}
+</script>
+</body></html>
